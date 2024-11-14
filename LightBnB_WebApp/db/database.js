@@ -64,19 +64,26 @@ const getUserWithId = function (id) {
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser = function (user) {
-    return pool
-        .query(
-            `INSERT INTO users (name, email, password) VALUES 
-                      ($1, $2, $3) RETURNING *
-            `, [user.name, user.email, user.password])
-        .then((result) => {
-            if (result.rows.length === 0) {
-                return null;
+    return getUserWithEmail(user.email)
+        .then((existingUser) => {
+            if (existingUser) {
+                return Promise.reject("User with this email already exists");
             }
-            return result.rows[0];
-        })
-        .catch((err) => {
-            return Promise.reject(err);
+            return pool
+                .query(
+                    `INSERT INTO users (name, email, password)
+                     VALUES ($1, $2, $3)
+                     RETURNING *
+                    `, [user.name, user.email, user.password])
+                .then((result) => {
+                    if (result.rows.length === 0) {
+                        return null;
+                    }
+                    return result.rows[0];
+                })
+                .catch((err) => {
+                    return Promise.reject(err);
+                });
         });
 };
 
