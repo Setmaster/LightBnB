@@ -92,10 +92,27 @@ const addUser = function (user) {
 /**
  * Get all reservations for a single user.
  * @param {string} guest_id The id of the user.
+ * @param limit
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function (guest_id, limit = 10) {
-    return getAllProperties(null, 2);
+    return pool
+        .query(
+            `SELECT properties.name, properties.number_of_bedrooms, properties.number_of_bathrooms, properties.parking_spaces, properties.cost_per_night
+             FROM properties
+             INNER JOIN reservations ON properties.id = reservations.property_id
+             WHERE guest_id = $1
+             LIMIT $2
+            `, [guest_id, limit])
+        .then((result) => {
+            if (result.rows.length === 0) {
+                return null;
+            }
+            return result.rows;
+        })
+        .catch((err) => {
+            return Promise.reject(err);
+        });
 };
 
 /// Properties
