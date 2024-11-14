@@ -98,7 +98,7 @@ const addUser = function (user) {
 const getAllReservations = function (guest_id, limit = 10) {
     return pool
         .query(
-            `SELECT properties.name, properties.number_of_bedrooms, properties.number_of_bathrooms, properties.parking_spaces, properties.cost_per_night
+            `SELECT properties.*
              FROM properties
              INNER JOIN reservations ON properties.id = reservations.property_id
              WHERE guest_id = $1
