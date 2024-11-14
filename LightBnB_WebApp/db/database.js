@@ -98,12 +98,13 @@ const addUser = function (user) {
 const getAllReservations = function (guest_id, limit = 10) {
     return pool
         .query(
-            `SELECT properties.*, AVG(property_reviews.rating) AS ratings
+            `SELECT properties.*, AVG(property_reviews.rating) AS ratings, reservations.start_date
              FROM properties
                       INNER JOIN reservations ON properties.id = reservations.property_id
                       INNER JOIN property_reviews ON properties.id = property_reviews.property_id
-             WHERE reservations.guest_id = $1
-             GROUP BY properties.id
+             WHERE reservations.guest_id = $1 AND reservations.end_date < now()::date
+             GROUP BY properties.id, reservations.start_date
+             ORDER BY reservations.start_date DESC
              LIMIT $2
             `, [guest_id, limit])
         .then((result) => {
