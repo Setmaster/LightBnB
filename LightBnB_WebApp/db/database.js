@@ -130,11 +130,11 @@ const getAllReservations = function (guest_id, limit = 10) {
 const getAllProperties = function (options, limit = 10) {
     const queryParams = [];
     let whereStarted = false;
-
     let queryString = `
 SELECT properties.*, AVG(property_reviews.rating) AS average_rating
 FROM properties
-INNER JOIN property_reviews ON properties.id = property_id`;
+INNER JOIN property_reviews ON properties.id = property_id
+`;
 
     if (options.city) {
         queryParams.push(`%${options.city}%`);
@@ -189,10 +189,57 @@ LIMIT $${queryParams.length};
  * @return {Promise<{}>} A promise to the property.
  */
 const addProperty = function (property) {
-    const propertyId = Object.keys(properties).length + 1;
-    property.id = propertyId;
-    properties[propertyId] = property;
-    return Promise.resolve(property);
+    const queryString = `
+    INSERT INTO properties (
+      owner_id,
+      title,
+      description,
+      thumbnail_photo_url,
+      cover_photo_url,
+      cost_per_night,
+      street,
+      city,
+      province,
+      post_code,
+      country,
+      parking_spaces,
+      number_of_bathrooms,
+      number_of_bedrooms,
+      active
+    ) VALUES (
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true
+    )
+    RETURNING *;
+  `;
+
+    const queryParams = [
+        property.owner_id,
+        property.title,
+        property.description,
+        property.thumbnail_photo_url,
+        property.cover_photo_url,
+        Number(property.cost_per_night),
+        property.street,
+        property.city,
+        property.province,
+        property.post_code,
+        property.country,
+        Number(property.parking_spaces),
+        Number(property.number_of_bathrooms),
+        Number(property.number_of_bedrooms)
+    ];
+
+    console.log(queryString, queryParams);
+    
+    return pool
+        .query(
+            queryString, queryParams)
+        .then((result) => {
+            return Promise.resolve(result.rows[0]);
+        })
+        .catch((err) => {
+            return Promise.reject(err);
+        });
 };
 
 module.exports = {
